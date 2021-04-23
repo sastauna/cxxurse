@@ -1,3 +1,4 @@
+#pragma once
 #include <type_traits>
 using namespace std;
 
@@ -7,19 +8,11 @@ constexpr T pow_rec(T const base, T const exp, T const prod) noexcept {
 		return prod;
 	}
 
-	if (exp & 1) {
-		return pow_rec(
-			base * base,
-			exp >> 1,
-			prod * base
-		);
-	} else {
-		return pow_rec(
-			base * base,
-			exp >> 1,
-			prod
-		);
-	}
+	return pow_rec(
+		base * base,
+		exp >> 1,
+		exp & 1 ? prod * base : prod
+	);
 }
 
 template <class T, typename = enable_if_t<is_unsigned_v<T>>>

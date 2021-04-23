@@ -1,3 +1,5 @@
+#pragma once
+
 constexpr size_t modpow_rec(
 	size_t const base,
 	size_t const exp,
@@ -9,23 +11,14 @@ constexpr size_t modpow_rec(
 		return prod;
 	}
 
-	if (bits & 1) {
-		return modpow_rec(
-			(base * base) % exp,
-			exp,
-			(prod * base) % exp,
-			bits >> 1
-		);
-	} else {
-		return modpow_rec(
-			(base * base) % exp,
-			exp,
-			prod,
-			bits >> 1
-		);
-	}
+	return modpow_rec(
+		(base * base) % exp,
+		exp,
+		bits & 1 ? (prod * base) % exp : prod,
+		bits >> 1
+	);
 }
 
 constexpr size_t modpow_1(size_t const base, size_t const exp) noexcept {
-	return modpow_rec(base, exp, 1, exp);
+	return modpow_rec(base, exp, 1, exp - 1);
 }
