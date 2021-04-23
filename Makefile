@@ -1,82 +1,38 @@
+cxx := clang++
+
 ifeq ($(OS), Windows_NT)
 	exe := exe
 else
 	exe := elf
 endif
 
-# c
-c_flags   = $(shell ./space_cat.$(exe) c/compile_flags.txt)
-c_dflags := -g
-c_rflags := -O2
-
 .SECONDARY:
-
-space_cat.$(exe): c/space_cat.c
-	clang $< -Wall -Wextra -Ofast -fuse-ld=lld -o $@
-
-## base
-c/%.$(exe): c/%.c
-	clang $< $(c_flags) -o $@
-
-run~%.c: c/%.$(exe)
-	@./$<
-
-## debug
-c/%.debug.$(exe): c/%.c
-	clang $< $(c_flags) $(c_dflags) -o $@
-
-debug~%.c: c/%.debug.$(exe)
-	-
-
-## release
-c/%.release.$(exe): c/%.c
-	clang $< $(c_flags) $(c_rflags) -o $@
-
-release~%.c: c/%.release.$(exe)
-	-
+.SECONDEXPANSION:
 
 # cxx
-cxx_flags  := $(shell ./space_cat.$(exe) cxx/compile_flags.txt)
-cxx_dflags := -g
-cxx_rflags := -O2
+cxx_flags  := $(shell ./misc/space_cat.$(exe) compile_flags.txt)
+cxx_dflags := $(cxx_flags) -g
+cxx_rflags := $(cxx_flags) -O2
 
-## base
-cxx_base = clang++ $< $(cxx_flags) -o $@
+match_exe = $(patsubst src/%.cxx,bin/%.$(2),$(wildcard src/$(1)*.cxx))
 
-cxx/%.$(exe): cxx/%.cxx
-	$(cxx_base)
+# base
+bin/%.$(exe): src/%.cxx
+	$(cxx) $< $(cxx_flags) -o $@
 
-run~%.cxx: cxx/%.$(exe)
-	@-./$<
+run~%: $$(call match_exe,%,$(exe))
+	./$<
 
-## debug
-cxx_debug = clang++ $< $(cxx_flags) $(cxx_dflags) -o $@
+# debug
+bin/%.debug.$(exe): src/%.cxx
+	$(cxx) $< $(cxx_dflags) -o $@
 
-cxx/%.debug.$(exe): cxx/%.cxx
-	$(cxx_debug)
-
-debug~%.cxx: cxx/%.debug.$(exe)
+debug~%: $$(call match_exe,%,$(exe))
 	-
 
-## release
-cxx_release = clang++ $< $(cxx_flags) $(cxx_rflags) -o $@
-cxx/%.release.$(exe): cxx/%.cxx
-	-$(cxx_release)
+# release
+bin/%.release.$(exe): src/%.cxx
+	$(cxx) $< $(cxx_rflags) -o $@
 
-release~%.cxx: cxx/%.release.$(exe)
+release~%: $$(call match_exe,%,$(exe))
 	-
-
-clean-artifacts: run~clean_artifacts.cxx
-	-
-
-### cxx_weekly
-cxx/weekly/%.$(exe): cxx/weekly/%.cxx
-	$(cxx_base)
-
-num_to_exe = $(patsubst %.cxx,%.$(exe),$(wildcard cxx/weekly/*$(1).*.cxx))
-
-.SECONDEXPANSION:
-cxx_weekly~%: $$(call num_to_exe,%)
-	@-./$<
-
-.PHONY: cxx_weekly~%
