@@ -2,7 +2,7 @@
 using namespace std;
 
 template <class T, typename = enable_if_t<is_unsigned_v<T>>>
-T pow(T base, T exp) noexcept {
+inline T pow(T base, T exp) noexcept {
    size_t prod{};
    do {
       if (exp & 1) {
