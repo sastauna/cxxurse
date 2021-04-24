@@ -1,14 +1,13 @@
 #pragma once
-#include <iostream>
+#include <cstddef>
+#include <cstdint>
 
-#define u64 uint64_t
+using u64 = uint64_t;
 
-constexpr int i = 0xFFFF;
-constexpr unsigned char c = i;
 constexpr unsigned char halfsize{sizeof(u64) * 4};
 constexpr unsigned char fullsize{2 * halfsize};
-constexpr u64 max32  = 0x00000000FFFFFFFF;
-constexpr u64 max64  = 0xFFFFFFFFFFFFFFFF;
+constexpr u64 max32 = 0x00000000FFFFFFFF;
+constexpr u64 max64 = 0xFFFFFFFFFFFFFFFF;
 
 struct u128 {
 	u64 greater;
@@ -27,7 +26,6 @@ struct u32_2 {
 		lesser{a & max32}
 	{}
 };
-
 
 constexpr bool add_will_overflow(u64 a, u64 b) {
 	return b > max64 - a;
@@ -70,18 +68,16 @@ constexpr u128 subtract(u128 a, u128 b) {
 	return diff;
 }
 
-constexpr u128 toMid(u64 in) {
-	u128 res{in >> halfsize, in << halfsize};
-	return res;
+constexpr u128 to_mid(u64 in) {
+	return {in >> halfsize, in << halfsize};
 }
 
-template<u64 a, u64 b>
-constexpr u128 multiply() {
-	constexpr u32_2 A(a);
-	constexpr u32_2 B(b);
-	constexpr u128 prod{A.greater * B.greater, A.lesser * B.lesser};
-	constexpr u128 midProd1 = toMid(A.lesser * B.greater);
-	constexpr u128 midProd2 = toMid(A.greater * B.lesser);
+constexpr u128 multiply(u64 a, u64 b) {
+	u32_2 A{a};
+	u32_2 B{b};
+	u128 prod{A.greater * B.greater, A.lesser * B.lesser};
+	u128 midProd1 = to_mid(A.lesser * B.greater);
+	u128 midProd2 = to_mid(A.greater * B.lesser);
 	return add(add(prod, midProd1), midProd2);
 }
 
@@ -101,8 +97,8 @@ constexpr u64 mod(u128 a, u64 base) {
 	return modularSubtract(a, getMaxPower(a, u128{0, base})) % base;
 }
 
-template<u64 base>
 constexpr u64 modpow_rec(
+	u64 const base,
 	u64 const divisor,
 	u64 const exp,
 	u64 const prod
@@ -112,25 +108,25 @@ constexpr u64 modpow_rec(
 		return prod;
 	}
 
-	return modpow_rec<mod(multiply<base, base>(), divisor)>(
+	return modpow_rec(
+		mod(multiply(base, base), divisor),
 		divisor,
 		exp >> 1,
-		exp & 1 ? mod(multiply<prod, base>(), divisor) : prod
+		exp & 1 ? mod(multiply(prod, base), divisor) : prod
 	);
 }
 
-template<u64 base>
-constexpr u64 modpow(u64 exp, u64 divisor) {
-	return modpow_rec<base>(exp, divisor, 1);
+constexpr u64 modpow(u64 base, u64 exp, u64 divisor) {
+	return modpow_rec(base, exp, divisor, 1);
 }
 
-template<u64 p>
-constexpr bool is_pseudoprime(u64 test) {
-	return modpow<p>(test - 1, test) == 1;
+constexpr bool is_pseudoprime(u64 p, u64 test) {
+	return modpow(p, test - 1, test) == 1;
 }
 
+#include <iostream>
 int main() {
-	constexpr u128 product = multiply<max64 - 2, max64 - 4>();
+	constexpr u128 product = multiply(max64 - 2, max64 - 4);
 	// max64 is divisible by max32, so we should expect a remainder of (-2)*(-4)
 	constexpr u64 remainder = mod(product, max32);
 	std::cout << remainder << '\n';
