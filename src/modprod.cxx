@@ -1,39 +1,35 @@
 #pragma once
 #include <iostream>
-#include <limits>
-#include <cstdint>
 
-#define size_t uint64_t
-#define times *
+#define u64 uint64_t
 
 constexpr int i = 0xFFFF;
 constexpr unsigned char c = i;
-constexpr unsigned char halfsize{sizeof(size_t) * 4};
+constexpr unsigned char halfsize{sizeof(u64) * 4};
 constexpr unsigned char fullsize{2 * halfsize};
-constexpr size_t max32  = 0x00000000FFFFFFFF;
-constexpr size_t max64  = 0xFFFFFFFFFFFFFFFF;
-constexpr size_t mask63 = 0x8000000000000000;
+constexpr u64 max32  = 0x00000000FFFFFFFF;
+constexpr u64 max64  = 0xFFFFFFFFFFFFFFFF;
 
 struct u128 {
-	size_t greater;
-	size_t lesser;
-	constexpr u128(size_t greater, size_t lesser) noexcept:
+	u64 greater;
+	u64 lesser;
+	constexpr u128(u64 greater, u64 lesser) noexcept:
 		greater{greater},
 		lesser{lesser}
 	{}
 };
 
 struct u32_2 {
-	size_t greater;
-	size_t lesser;
-	constexpr u32_2(size_t a) noexcept:
+	u64 greater;
+	u64 lesser;
+	constexpr u32_2(u64 a) noexcept:
 		greater{a >> halfsize},
 		lesser{a & max32}
 	{}
 };
 
 
-constexpr bool add_will_overflow(size_t a, size_t b) {
+constexpr bool add_will_overflow(u64 a, u64 b) {
 	return b > max64 - a;
 }
 
@@ -74,12 +70,12 @@ constexpr u128 subtract(u128 a, u128 b) {
 	return diff;
 }
 
-constexpr u128 toMid(size_t in) {
+constexpr u128 toMid(u64 in) {
 	u128 res{in >> halfsize, in << halfsize};
 	return res;
 }
 
-template<size_t a, size_t b>
+template<u64 a, u64 b>
 constexpr u128 prod() {
 	constexpr u32_2 A(a);
 	constexpr u32_2 B(b);
@@ -93,12 +89,12 @@ constexpr u128 getMaxPower(u128 a, u128 test) {
 	return greaterthan(test, shiftR(a, 1)) ? test : getMaxPower(a, shiftL(test, 1));
 }
 
-constexpr size_t modularSubtract(u128 a, u128 x) {
+constexpr u64 modularSubtract(u128 a, u128 x) {
 	if(a.greater == 0) return a.lesser;
 	return modularSubtract(greaterthan(x, a) ? a : subtract(a, x), shiftR(x, 1));
 }
 
-constexpr size_t mod(u128 a, size_t base) {
+constexpr u64 mod(u128 a, u64 base) {
 	if(a.greater == 0) {
 		return a.lesser % base;
 	}
@@ -108,5 +104,6 @@ constexpr size_t mod(u128 a, size_t base) {
 int main() {
 	constexpr u128 product = prod<max64 - 2, max64 - 4>();
 	// max64 is divisible by max32, so we should expect a remainder of (-2)*(-4)
-	constexpr size_t remainder = mod(product, max32);
+	constexpr u64 remainder = mod(product, max32);
+	std::cout << remainder << '\n';
 }
