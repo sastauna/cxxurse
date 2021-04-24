@@ -76,7 +76,7 @@ constexpr u128 toMid(u64 in) {
 }
 
 template<u64 a, u64 b>
-constexpr u128 prod() {
+constexpr u128 multiply() {
 	constexpr u32_2 A(a);
 	constexpr u32_2 B(b);
 	constexpr u128 prod{A.greater * B.greater, A.lesser * B.lesser};
@@ -101,8 +101,36 @@ constexpr u64 mod(u128 a, u64 base) {
 	return modularSubtract(a, getMaxPower(a, u128{0, base})) % base;
 }
 
+template<u64 base>
+constexpr u64 modpow_rec(
+	u64 const divisor,
+	u64 const exp,
+	u64 const prod
+) noexcept
+{
+	if (exp == 0) {
+		return prod;
+	}
+
+	return modpow_rec<mod(multiply<base, base>(), divisor)>(
+		divisor,
+		exp >> 1,
+		exp & 1 ? mod(multiply<prod, base>(), divisor) : prod
+	);
+}
+
+template<u64 base>
+constexpr u64 modpow(u64 exp, u64 divisor) {
+	return modpow_rec<base>(exp, divisor, 1);
+}
+
+template<u64 p>
+constexpr bool is_pseudoprime(u64 test) {
+	return modpow<p>(test - 1, test) == 1;
+}
+
 int main() {
-	constexpr u128 product = prod<max64 - 2, max64 - 4>();
+	constexpr u128 product = multiply<max64 - 2, max64 - 4>();
 	// max64 is divisible by max32, so we should expect a remainder of (-2)*(-4)
 	constexpr u64 remainder = mod(product, max32);
 	std::cout << remainder << '\n';
